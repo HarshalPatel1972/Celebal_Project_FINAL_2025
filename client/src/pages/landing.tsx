@@ -123,27 +123,15 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Stats Section */}
+      {/* Coming Soon Section */}
       <section className="py-20 bg-cinema-gradient">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl font-bold text-spotlight-orange mb-2">50K+</div>
-              <div className="text-gray-300">Happy Customers</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-spotlight-orange mb-2">1M+</div>
-              <div className="text-gray-300">Tickets Booked</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-spotlight-orange mb-2">25+</div>
-              <div className="text-gray-300">Premium Theaters</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-spotlight-orange mb-2">98%</div>
-              <div className="text-gray-300">Satisfaction Rate</div>
-            </div>
-          </div>
+        <div className="container mx-auto px-4 text-center">
+          <h3 className="text-4xl font-bold text-spotlight-orange mb-4">
+            Coming Soon
+          </h3>
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+            Get ready for the ultimate movie booking experience. Real-time seat selection, secure payments, and premium theater environments await.
+          </p>
         </div>
       </section>
 

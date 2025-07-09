@@ -16,19 +16,22 @@ import MobileNavigation from "@/components/mobile-navigation";
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-cinema-black flex items-center justify-center">
+        <div className="text-spotlight-orange text-2xl">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <Switch>
-      {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
-      ) : (
-        <>
-          <Route path="/" component={Home} />
-          <Route path="/movie/:id" component={MovieDetails} />
-          <Route path="/seat-selection/:showtimeId" component={SeatSelection} />
-          <Route path="/booking-confirmation/:bookingId" component={BookingConfirmation} />
-          <Route path="/dashboard" component={UserDashboard} />
-        </>
-      )}
+      <Route path="/" component={Home} />
+      <Route path="/landing" component={Landing} />
+      <Route path="/movie/:id" component={MovieDetails} />
+      <Route path="/seat-selection/:showtimeId" component={SeatSelection} />
+      <Route path="/booking-confirmation/:bookingId" component={BookingConfirmation} />
+      <Route path="/dashboard" component={UserDashboard} />
       <Route component={NotFound} />
     </Switch>
   );

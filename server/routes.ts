@@ -23,7 +23,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Movie routes
+  // Public movie routes (no authentication required)
   app.get('/api/movies', async (req, res) => {
     try {
       const movies = await storage.getMovies();
