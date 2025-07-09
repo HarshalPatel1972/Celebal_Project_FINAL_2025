@@ -139,6 +139,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Search movies
+  app.get('/api/movies/search', async (req, res) => {
+    try {
+      const { q } = req.query;
+      if (!q || typeof q !== 'string') {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+      
+      const movies = await storage.searchMovies(q);
+      res.json(movies);
+    } catch (error) {
+      console.error("Error searching movies:", error);
+      res.status(500).json({ message: "Failed to search movies" });
+    }
+  });
+
+  // Watchlist routes (protected)
+  app.get('/api/watchlist', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const watchlist = await storage.getWatchlistByUserId(userId);
+      res.json(watchlist);
+    } catch (error) {
+      console.error("Error fetching watchlist:", error);
+      res.status(500).json({ message: "Failed to fetch watchlist" });
+    }
+  });
+
+  app.post('/api/watchlist', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { movieId } = req.body;
+      
+      if (!movieId) {
+        return res.status(400).json({ message: "Movie ID is required" });
+      }
+      
+      const watchlistItem = await storage.addToWatchlist(userId, movieId);
+      res.json(watchlistItem);
+    } catch (error) {
+      console.error("Error adding to watchlist:", error);
+      res.status(500).json({ message: "Failed to add to watchlist" });
+    }
+  });
+
+  app.delete('/api/watchlist/:movieId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const movieId = parseInt(req.params.movieId);
+      
+      await storage.removeFromWatchlist(userId, movieId);
+      res.json({ message: "Removed from watchlist" });
+    } catch (error) {
+      console.error("Error removing from watchlist:", error);
+      res.status(500).json({ message: "Failed to remove from watchlist" });
+    }
+  });
+
   // Theater routes
   app.get('/api/theaters', async (req, res) => {
     try {

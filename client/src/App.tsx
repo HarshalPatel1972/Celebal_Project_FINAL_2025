@@ -11,6 +11,7 @@ import MovieDetails from "@/pages/movie-details";
 import SeatSelection from "@/pages/seat-selection";
 import BookingConfirmation from "@/pages/booking-confirmation";
 import UserDashboard from "@/pages/user-dashboard";
+import Theaters from "@/pages/theaters";
 import MobileNavigation from "@/components/mobile-navigation";
 
 function Router() {
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/seat-selection/:showtimeId" component={SeatSelection} />
       <Route path="/booking-confirmation/:bookingId" component={BookingConfirmation} />
       <Route path="/dashboard" component={UserDashboard} />
+      <Route path="/theaters" component={Theaters} />
       <Route component={NotFound} />
     </Switch>
   );

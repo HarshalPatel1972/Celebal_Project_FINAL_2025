@@ -32,9 +32,14 @@ export const sessions = pgTable(
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().notNull(),
   email: varchar("email").unique(),
+  phone: varchar("phone").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  emailVerified: boolean("email_verified").default(false),
+  phoneVerified: boolean("phone_verified").default(false),
+  location: varchar("location"),
+  preferredLanguage: varchar("preferred_language").default("en"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -53,6 +58,11 @@ export const movies = pgTable("movies", {
   rating: decimal("rating", { precision: 3, scale: 1 }),
   voteCount: integer("vote_count"),
   trailerUrl: varchar("trailer_url"),
+  cast: jsonb("cast"), // Array of cast members with name, character, profile_path
+  crew: jsonb("crew"), // Array of crew members with name, job, profile_path
+  director: varchar("director"),
+  language: varchar("language"),
+  certification: varchar("certification"), // PG, PG-13, R, etc.
   isNowShowing: boolean("is_now_showing").default(false),
   isComingSoon: boolean("is_coming_soon").default(false),
   createdAt: timestamp("created_at").defaultNow(),
@@ -65,7 +75,14 @@ export const theaters = pgTable("theaters", {
   name: varchar("name").notNull(),
   location: varchar("location").notNull(),
   address: text("address"),
+  city: varchar("city").notNull(),
+  state: varchar("state").notNull(),
+  pincode: varchar("pincode"),
+  latitude: decimal("latitude", { precision: 10, scale: 8 }),
+  longitude: decimal("longitude", { precision: 11, scale: 8 }),
   amenities: text("amenities").array(),
+  tier: varchar("tier").default("tier2"), // tier1, tier2 for pricing
+  rating: decimal("rating", { precision: 3, scale: 1 }).default("4.5"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -98,9 +115,20 @@ export const seats = pgTable("seats", {
   seatNumber: varchar("seat_number").notNull(), // A1, A2, B1, etc.
   row: varchar("row").notNull(),
   column: integer("column").notNull(),
-  seatType: varchar("seat_type").default("standard"), // standard, premium
+  seatType: varchar("seat_type").default("regular"), // regular, premium, recliner
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   isActive: boolean("is_active").default(true),
 });
+
+// Watchlist table
+export const watchlist = pgTable("watchlist", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  movieId: integer("movie_id").references(() => movies.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  unique("unique_user_movie").on(table.userId, table.movieId),
+]);
 
 // Bookings table
 export const bookings = pgTable("bookings", {
@@ -143,10 +171,23 @@ export const seatHolds = pgTable("seat_holds", {
 export const usersRelations = relations(users, ({ many }) => ({
   bookings: many(bookings),
   seatHolds: many(seatHolds),
+  watchlist: many(watchlist),
 }));
 
 export const moviesRelations = relations(movies, ({ many }) => ({
   showtimes: many(showtimes),
+  watchlist: many(watchlist),
+}));
+
+export const watchlistRelations = relations(watchlist, ({ one }) => ({
+  user: one(users, {
+    fields: [watchlist.userId],
+    references: [users.id],
+  }),
+  movie: one(movies, {
+    fields: [watchlist.movieId],
+    references: [movies.id],
+  }),
 }));
 
 export const theatersRelations = relations(theaters, ({ many }) => ({

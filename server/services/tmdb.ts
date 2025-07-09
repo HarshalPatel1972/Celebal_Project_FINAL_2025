@@ -68,11 +68,17 @@ class TMDbService {
   async getMovieDetails(movieId: number): Promise<TMDbMovie> {
     const movie = await this.makeRequest(`/movie/${movieId}`);
     const videos = await this.makeRequest(`/movie/${movieId}/videos`);
+    const credits = await this.makeRequest(`/movie/${movieId}/credits`);
     
     return {
       ...movie,
-      videos: videos
+      videos: videos,
+      credits: credits
     };
+  }
+
+  async getMovieCredits(movieId: number): Promise<any> {
+    return await this.makeRequest(`/movie/${movieId}/credits`);
   }
 
   async getMovieTrailer(movieId: number): Promise<string | null> {
@@ -96,6 +102,10 @@ class TMDbService {
   }
 
   transformMovieData(tmdbMovie: TMDbMovie) {
+    const director = tmdbMovie.credits?.crew?.find((person: any) => person.job === 'Director');
+    const topCast = tmdbMovie.credits?.cast?.slice(0, 10) || [];
+    const topCrew = tmdbMovie.credits?.crew?.slice(0, 5) || [];
+    
     return {
       tmdbId: tmdbMovie.id,
       title: tmdbMovie.title,
@@ -108,6 +118,19 @@ class TMDbService {
       rating: tmdbMovie.vote_average ? tmdbMovie.vote_average.toString() : null,
       voteCount: tmdbMovie.vote_count,
       trailerUrl: null, // Will be populated separately
+      director: director?.name || null,
+      cast: topCast.map((person: any) => ({
+        name: person.name,
+        character: person.character,
+        profilePath: person.profile_path
+      })),
+      crew: topCrew.map((person: any) => ({
+        name: person.name,
+        job: person.job,
+        profilePath: person.profile_path
+      })),
+      language: tmdbMovie.original_language || 'en',
+      certification: tmdbMovie.certification || null
     };
   }
 }

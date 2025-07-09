@@ -2,7 +2,7 @@
 
 ## Overview
 
-SpotlightNow is a cinema booking platform that provides users with an immersive movie discovery and ticket booking experience. The application features a modern, cinema-themed UI with real-time seat selection, secure payment processing, and comprehensive booking management.
+SpotlightNow is a cinema booking platform that provides users with an immersive movie discovery and ticket booking experience. The application features a modern, cinema-themed UI with real-time seat selection, secure payment processing, and comprehensive booking management. Currently showing 17 real movies from TMDb API with working search functionality and watchlist management.
 
 ## User Preferences
 
@@ -120,3 +120,28 @@ Preferred communication style: Simple, everyday language.
 - **CORS**: Proper cross-origin resource sharing configuration
 
 The architecture prioritizes type safety, developer experience, and user experience while maintaining scalability and security. The system is designed to handle real-time seat booking scenarios with proper concurrency controls and user feedback mechanisms.
+
+## Recent Changes (January 2025)
+
+### Search Functionality
+- Added working search modal with real-time TMDb movie search
+- Implemented search button in header with proper modal integration
+- Created search API endpoint with query parameter support
+- Added text visibility fixes for movie details pages
+
+### Database Integration
+- Completed database storage methods for search and watchlist operations
+- Fixed missing imports for SQL operators (or, ilike) in storage layer
+- Added proper watchlist table integration with join operations
+
+### UI Components
+- Created Dialog, Input, and Card components for consistent UI library
+- Added theaters page routing to application navigation
+- Improved search modal with movie card display and navigation
+
+### Next Steps
+- Implement Razorpay payment integration
+- Add Twilio WhatsApp ticket delivery
+- Create SendGrid email notifications
+- Enhance seat selection with real-time blocking
+- Add location-based theater filtering

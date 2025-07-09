@@ -3,11 +3,13 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Film, Search, Bell, User, Menu, X } from "lucide-react";
+import SearchModal from "@/components/search-modal";
 
 export default function Header() {
   const [location] = useLocation();
   const { user } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const navigation = [
     { name: "Movies", href: "/", active: location === "/" },
@@ -48,6 +50,7 @@ export default function Header() {
               variant="ghost" 
               size="icon"
               className="text-gray-300 hover:text-spotlight-orange transition-colors"
+              onClick={() => setIsSearchOpen(true)}
             >
               <Search className="h-5 w-5" />
             </Button>
@@ -119,6 +122,11 @@ export default function Header() {
           </div>
         )}
       </div>
+      
+      <SearchModal 
+        isOpen={isSearchOpen} 
+        onClose={() => setIsSearchOpen(false)} 
+      />
     </header>
   );
 }
