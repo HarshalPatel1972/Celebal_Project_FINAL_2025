@@ -1,10 +1,15 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./setupAuth";
 import { tmdbService } from "./services/tmdb";
 import { razorpayService } from "./services/razorpay";
-import { insertMovieSchema, insertShowtimeSchema, insertBookingSchema, insertSeatHoldSchema } from "@shared/schema";
+import {
+  insertMovieSchema,
+  insertShowtimeSchema,
+  insertBookingSchema,
+  insertSeatHoldSchema,
+} from "@shared/schema";
 import { nanoid } from "nanoid";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -12,7 +17,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -24,7 +29,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Public movie routes (no authentication required)
-  app.get('/api/movies', async (req, res) => {
+  app.get("/api/movies", async (req, res) => {
     try {
       const movies = await storage.getMovies();
       res.json(movies);
@@ -34,7 +39,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/movies/now-showing', async (req, res) => {
+  app.get("/api/movies/now-showing", async (req, res) => {
     try {
       const movies = await storage.getNowShowingMovies();
       res.json(movies);
@@ -44,7 +49,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/movies/coming-soon', async (req, res) => {
+  app.get("/api/movies/coming-soon", async (req, res) => {
     try {
       const movies = await storage.getComingSoonMovies();
       res.json(movies);
@@ -54,11 +59,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/movies/:id', async (req, res) => {
+  app.get("/api/movies/:id", async (req, res) => {
     try {
       const movieId = parseInt(req.params.id);
       const movie = await storage.getMovieById(movieId);
-      
+
       if (!movie) {
         return res.status(404).json({ message: "Movie not found" });
       }
@@ -70,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/movies/:id/showtimes', async (req, res) => {
+  app.get("/api/movies/:id/showtimes", async (req, res) => {
     try {
       const movieId = parseInt(req.params.id);
       const showtimes = await storage.getShowtimesByMovieId(movieId);
@@ -82,11 +87,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Sync movies from TMDb
-  app.post('/api/movies/sync', async (req, res) => {
+  app.post("/api/movies/sync", async (req, res) => {
     try {
       const [nowPlayingMovies, upcomingMovies] = await Promise.all([
         tmdbService.getNowPlayingMovies(),
-        tmdbService.getUpcomingMovies()
+        tmdbService.getUpcomingMovies(),
       ]);
 
       const syncedMovies = [];
@@ -94,18 +99,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Process now playing movies
       for (const tmdbMovie of nowPlayingMovies.slice(0, 10)) {
         const existingMovie = await storage.getMovieByTmdbId(tmdbMovie.id);
-        
+
         if (!existingMovie) {
           const movieData = tmdbService.transformMovieData(tmdbMovie);
           const trailerUrl = await tmdbService.getMovieTrailer(tmdbMovie.id);
-          
+
           const newMovie = await storage.createMovie({
             ...movieData,
             trailerUrl,
             isNowShowing: true,
             isComingSoon: false,
           });
-          
+
           syncedMovies.push(newMovie);
         }
       }
@@ -113,25 +118,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Process upcoming movies
       for (const tmdbMovie of upcomingMovies.slice(0, 10)) {
         const existingMovie = await storage.getMovieByTmdbId(tmdbMovie.id);
-        
+
         if (!existingMovie) {
           const movieData = tmdbService.transformMovieData(tmdbMovie);
           const trailerUrl = await tmdbService.getMovieTrailer(tmdbMovie.id);
-          
+
           const newMovie = await storage.createMovie({
             ...movieData,
             trailerUrl,
             isNowShowing: false,
             isComingSoon: true,
           });
-          
+
           syncedMovies.push(newMovie);
         }
       }
 
-      res.json({ 
+      res.json({
         message: `Synced ${syncedMovies.length} movies from TMDb`,
-        movies: syncedMovies
+        movies: syncedMovies,
       });
     } catch (error) {
       console.error("Error syncing movies:", error);
@@ -140,13 +145,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Search movies
-  app.get('/api/movies/search', async (req, res) => {
+  app.get("/api/movies/search", async (req, res) => {
     try {
       const { q } = req.query;
-      if (!q || typeof q !== 'string') {
+      if (!q || typeof q !== "string") {
         return res.status(400).json({ message: "Search query is required" });
       }
-      
+
       const movies = await storage.searchMovies(q);
       res.json(movies);
     } catch (error) {
@@ -156,7 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Watchlist routes (protected)
-  app.get('/api/watchlist', isAuthenticated, async (req: any, res) => {
+  app.get("/api/watchlist", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const watchlist = await storage.getWatchlistByUserId(userId);
@@ -167,15 +172,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/watchlist', isAuthenticated, async (req: any, res) => {
+  app.post("/api/watchlist", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { movieId } = req.body;
-      
+
       if (!movieId) {
         return res.status(400).json({ message: "Movie ID is required" });
       }
-      
+
       const watchlistItem = await storage.addToWatchlist(userId, movieId);
       res.json(watchlistItem);
     } catch (error) {
@@ -184,21 +189,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/watchlist/:movieId', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const movieId = parseInt(req.params.movieId);
-      
-      await storage.removeFromWatchlist(userId, movieId);
-      res.json({ message: "Removed from watchlist" });
-    } catch (error) {
-      console.error("Error removing from watchlist:", error);
-      res.status(500).json({ message: "Failed to remove from watchlist" });
+  app.delete(
+    "/api/watchlist/:movieId",
+    isAuthenticated,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.claims.sub;
+        const movieId = parseInt(req.params.movieId);
+
+        await storage.removeFromWatchlist(userId, movieId);
+        res.json({ message: "Removed from watchlist" });
+      } catch (error) {
+        console.error("Error removing from watchlist:", error);
+        res.status(500).json({ message: "Failed to remove from watchlist" });
+      }
     }
-  });
+  );
 
   // Theater routes
-  app.get('/api/theaters', async (req, res) => {
+  app.get("/api/theaters", async (req, res) => {
     try {
       const theaters = await storage.getTheaters();
       res.json(theaters);
@@ -208,7 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/theaters/:id/screens', async (req, res) => {
+  app.get("/api/theaters/:id/screens", async (req, res) => {
     try {
       const theaterId = parseInt(req.params.id);
       const screens = await storage.getScreensByTheaterId(theaterId);
@@ -220,11 +229,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Showtime routes
-  app.get('/api/showtimes/:id', async (req, res) => {
+  app.get("/api/showtimes/:id", async (req, res) => {
     try {
       const showtimeId = parseInt(req.params.id);
       const showtime = await storage.getShowtimeById(showtimeId);
-      
+
       if (!showtime) {
         return res.status(404).json({ message: "Showtime not found" });
       }
@@ -236,11 +245,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/showtimes/:id/seats', async (req, res) => {
+  app.get("/api/showtimes/:id/seats", async (req, res) => {
     try {
       const showtimeId = parseInt(req.params.id);
       const showtime = await storage.getShowtimeById(showtimeId);
-      
+
       if (!showtime) {
         return res.status(404).json({ message: "Showtime not found" });
       }
@@ -248,13 +257,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const [seats, bookedSeats, heldSeats] = await Promise.all([
         storage.getSeatsByScreenId(showtime.screenId),
         storage.getBookedSeatsByShowtimeId(showtimeId),
-        storage.getSeatHoldsByShowtimeId(showtimeId)
+        storage.getSeatHoldsByShowtimeId(showtimeId),
       ]);
 
-      const seatMap = seats.map(seat => ({
+      const seatMap = seats.map((seat) => ({
         ...seat,
-        isBooked: bookedSeats.some(bs => bs.seatId === seat.id),
-        isHeld: heldSeats.some(hs => hs.seatId === seat.id && hs.expiresAt > new Date())
+        isBooked: bookedSeats.some((bs) => bs.seatId === seat.id),
+        isHeld: heldSeats.some(
+          (hs) => hs.seatId === seat.id && hs.expiresAt > new Date()
+        ),
       }));
 
       res.json(seatMap);
@@ -265,7 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Seat hold routes
-  app.post('/api/seats/hold', isAuthenticated, async (req: any, res) => {
+  app.post("/api/seats/hold", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { showtimeId, seatIds } = req.body;
@@ -291,10 +302,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         heldSeats.push(heldSeat);
       }
 
-      res.json({ 
+      res.json({
         message: "Seats held successfully",
         heldSeats,
-        expiresAt
+        expiresAt,
       });
     } catch (error) {
       console.error("Error holding seats:", error);
@@ -302,7 +313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/seats/hold/:id', isAuthenticated, async (req: any, res) => {
+  app.delete("/api/seats/hold/:id", isAuthenticated, async (req: any, res) => {
     try {
       const holdId = parseInt(req.params.id);
       await storage.deleteSeatHold(holdId);
@@ -314,7 +325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Booking routes
-  app.get('/api/bookings', isAuthenticated, async (req: any, res) => {
+  app.get("/api/bookings", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const bookings = await storage.getBookingsByUserId(userId);
@@ -325,11 +336,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/bookings/:id', isAuthenticated, async (req: any, res) => {
+  app.get("/api/bookings/:id", isAuthenticated, async (req: any, res) => {
     try {
       const bookingId = parseInt(req.params.id);
       const booking = await storage.getBookingById(bookingId);
-      
+
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
       }
@@ -341,10 +352,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const bookedSeats = await storage.getBookedSeatsByBookingId(bookingId);
-      
+
       res.json({
         ...booking,
-        bookedSeats
+        bookedSeats,
       });
     } catch (error) {
       console.error("Error fetching booking:", error);
@@ -352,7 +363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/bookings', isAuthenticated, async (req: any, res) => {
+  app.post("/api/bookings", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { showtimeId, seatIds, totalAmount } = req.body;
@@ -367,7 +378,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create Razorpay order
       const razorpayOrder = await razorpayService.createOrder(
         totalAmount,
-        'INR',
+        "INR",
         bookingReference
       );
 
@@ -377,14 +388,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         showtimeId: parseInt(showtimeId),
         bookingReference,
         totalAmount: totalAmount.toString(),
-        paymentStatus: 'pending',
-        status: 'confirmed',
+        paymentStatus: "pending",
+        status: "confirmed",
       });
 
       res.json({
         booking,
         razorpayOrder,
-        razorpayKeyId: razorpayService.getKeyId()
+        razorpayKeyId: razorpayService.getKeyId(),
       });
     } catch (error) {
       console.error("Error creating booking:", error);
@@ -392,61 +403,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/bookings/verify-payment', isAuthenticated, async (req: any, res) => {
-    try {
-      const { bookingId, razorpayPayment, seatIds } = req.body;
+  app.post(
+    "/api/bookings/verify-payment",
+    isAuthenticated,
+    async (req: any, res) => {
+      try {
+        const { bookingId, razorpayPayment, seatIds } = req.body;
 
-      if (!bookingId || !razorpayPayment || !seatIds) {
-        return res.status(400).json({ message: "Invalid payment data" });
-      }
-
-      // Verify payment with Razorpay
-      const isPaymentValid = await razorpayService.verifyPayment(razorpayPayment);
-      
-      if (!isPaymentValid) {
-        return res.status(400).json({ message: "Payment verification failed" });
-      }
-
-      // Update booking status
-      const updatedBooking = await storage.updateBooking(parseInt(bookingId), {
-        paymentStatus: 'completed',
-        paymentId: razorpayPayment.razorpay_payment_id,
-      });
-
-      // Create booked seats
-      const bookedSeats = [];
-      for (const seatId of seatIds) {
-        const bookedSeat = await storage.createBookedSeat({
-          bookingId: parseInt(bookingId),
-          seatId: parseInt(seatId),
-          showtimeId: updatedBooking.showtimeId,
-          isHeld: false,
-          heldUntil: null,
-        });
-        bookedSeats.push(bookedSeat);
-      }
-
-      // Clear seat holds for this user and showtime
-      const userHolds = await storage.getSeatHoldsByUserId(req.user.claims.sub);
-      for (const hold of userHolds) {
-        if (hold.showtimeId === updatedBooking.showtimeId) {
-          await storage.deleteSeatHold(hold.id);
+        if (!bookingId || !razorpayPayment || !seatIds) {
+          return res.status(400).json({ message: "Invalid payment data" });
         }
-      }
 
-      res.json({
-        message: "Payment verified and booking confirmed",
-        booking: updatedBooking,
-        bookedSeats
-      });
-    } catch (error) {
-      console.error("Error verifying payment:", error);
-      res.status(500).json({ message: "Failed to verify payment" });
+        // Verify payment with Razorpay
+        const isPaymentValid = await razorpayService.verifyPayment(
+          razorpayPayment
+        );
+
+        if (!isPaymentValid) {
+          return res
+            .status(400)
+            .json({ message: "Payment verification failed" });
+        }
+
+        // Update booking status
+        const updatedBooking = await storage.updateBooking(
+          parseInt(bookingId),
+          {
+            paymentStatus: "completed",
+            paymentId: razorpayPayment.razorpay_payment_id,
+          }
+        );
+
+        // Create booked seats
+        const bookedSeats = [];
+        for (const seatId of seatIds) {
+          const bookedSeat = await storage.createBookedSeat({
+            bookingId: parseInt(bookingId),
+            seatId: parseInt(seatId),
+            showtimeId: updatedBooking.showtimeId,
+            isHeld: false,
+            heldUntil: null,
+          });
+          bookedSeats.push(bookedSeat);
+        }
+
+        // Clear seat holds for this user and showtime
+        const userHolds = await storage.getSeatHoldsByUserId(
+          req.user.claims.sub
+        );
+        for (const hold of userHolds) {
+          if (hold.showtimeId === updatedBooking.showtimeId) {
+            await storage.deleteSeatHold(hold.id);
+          }
+        }
+
+        res.json({
+          message: "Payment verified and booking confirmed",
+          booking: updatedBooking,
+          bookedSeats,
+        });
+      } catch (error) {
+        console.error("Error verifying payment:", error);
+        res.status(500).json({ message: "Failed to verify payment" });
+      }
     }
-  });
+  );
 
   // Utility routes
-  app.post('/api/cleanup-expired-holds', async (req, res) => {
+  app.post("/api/cleanup-expired-holds", async (req, res) => {
     try {
       await storage.deleteExpiredSeatHolds();
       res.json({ message: "Expired seat holds cleaned up" });
